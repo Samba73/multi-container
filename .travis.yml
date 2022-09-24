@@ -1,0 +1,28 @@
+sudo: required
+services:
+  - docker
+
+before_install: 
+  - docker build -t samba73/mclient -f ./client/Dockerfile.dev ./client
+  - docker build -t samba73/mnginx -f ./nginx/Dockerfile.dev ./nginx
+  - docker build -t samba73/mserver ./server/Dockerfile.dev ./server
+  - docker build -t samba73/mworker ./worker/Dockerfile.dev ./worker
+
+ script:
+  - docker run -e CI=true samba73/mclient npm test   
+  - docker run -e CI=true samba73/mserver npm test
+  - docker run -e CI=true samba73/mworker npm test
+
+ after_success:
+   - docker build -t samba73/mclient ./client
+   - docker build -t samba73/nginx ./nginx
+   - docker build -t samba73/server ./server
+   - docker build -t samba73/worker ./worker
+
+   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+   - docker push samba73/mclient
+   - docker push samba73/nginx
+   - docker push samba73/mserver
+   - docker push samba73/mworker 
+
